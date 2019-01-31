@@ -23,6 +23,11 @@ class NeatlineRecordImport_Form_Import extends Omeka_Form {
             'multiOptions' => $this->getItemsForSelect(),
         ));
 
+        $this->addElement('checkbox', 'deleteexisting', array(
+            'label' => __('Delete Current Records'),
+            'description' => __('Delete any existing records belonging to this exhibit.')
+        ));
+
         $this->addElement('file', 'file', array(
             'label' => __('CSV File'),
             'description' => __('The file containing CSV data, including headers.'),
@@ -36,7 +41,7 @@ class NeatlineRecordImport_Form_Import extends Omeka_Form {
         ));
 
         $this->addDisplayGroup(
-            array('item', 'geo', 'zoom', 'lon', 'lat', 'layer'),
+            array('item', 'deleteexisting', 'file'),
             'recordimport_info'
         );
 

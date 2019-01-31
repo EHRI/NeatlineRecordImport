@@ -19,6 +19,10 @@ class NeatlineRecordImport_IndexController extends Omeka_Controller_AbstractActi
                 $itemId = $form->getValue('item');
                 $item = $db->getTable('NeatlineExhibit')->find($itemId);
 
+                if ($form->getElement('deleteexisting')->isChecked()) {
+                    $item->deleteChildRecords();
+                }
+
                 $rows = $this->_readData($_FILES["file"]["tmp_name"]);
                 foreach ($rows as $row) {
                     $this->_createRecord($item, $row);
@@ -41,10 +45,13 @@ class NeatlineRecordImport_IndexController extends Omeka_Controller_AbstractActi
     {
         $record = new NeatlineRecord;
         $record->exhibit_id = $exhibit->id;
-        foreach(["title", "slug", "body", "coverage"] as $field) {
-            if (isset($data[$field])) {
-                $record->$field = $data[$field];
-            }
+        foreach($data as $field => $value) {
+            $record->$field = $value;
+        }
+
+        if (!isset($data["coverage"]) && (isset($data["lat"]) && isset($data["lon"]))) {
+            list($lon, $lat) = $this->_degreesToMetres([$data["lon"], $data["lat"]]);
+            $record->coverage = "POINT($lon $lat)";
         }
 
         $record->save();
@@ -58,4 +65,15 @@ class NeatlineRecordImport_IndexController extends Omeka_Controller_AbstractActi
         array_shift($csv); # remove column header
         return $csv;
     }
+
+    private function _degreesToMetres($lon_lat)
+    {
+        $half_circumference = 20037508.34;
+
+        $x = $lon_lat[0] * $half_circumference / 180;
+        $y = log(tan((90 + $lon_lat[1]) * pi() / 360)) / (pi() / 180);
+        $y = $y * $half_circumference / 180;
+        return array($x, $y);
+    }
+
 }
